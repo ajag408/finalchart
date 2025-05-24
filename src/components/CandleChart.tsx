@@ -1,6 +1,6 @@
 // Import necessary dependencies from React and Chart.js libraries
 import { useEffect, useState, useRef } from 'react';
-import './CandleChart.css';
+import '../styles/components/CandleChart.css';
 
 // Import required Chart.js components and plugins
 import {
@@ -14,6 +14,11 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import annotationPlugin from 'chartjs-plugin-annotation';
+
+interface CandleChartProps {
+    onPnlChange?: (pnl: number) => void;
+    onLevelChange?: (level: number) => void;
+  }
 
 // Register Chart.js components and plugins
 ChartJS.register(
@@ -34,7 +39,7 @@ export const SOLANA_COLORS = {
     warning: '#FF3B3B'    // Rug pull red
 };
 
-const CandleChart = () => {
+const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange }) => {
     // ==================== State Management ====================
     
     // Core chart states
@@ -349,6 +354,10 @@ const CandleChart = () => {
                 base: base
             };
             
+            // Update PNL and level
+            if (onPnlChange) onPnlChange((currentValue - 1) * 100);
+            if (onLevelChange) onLevelChange(Math.floor(currentValue));
+
             // Update chart
             setData(createChartData(newCandleData));
         }
@@ -500,7 +509,7 @@ const CandleChart = () => {
                     padding: 8,
                     // Add glow effect to ticks
                     textStrokeWidth: 1,
-                    textStrokeColor: 'rgba(20, 241, 149, 0.2)',
+                    textStrokeColor: 'rgba(C20, 241, 149, 0.2)',
                 },
                 min: yAxisMin.current,
                 max: yAxisMax.current,
@@ -537,7 +546,7 @@ const CandleChart = () => {
                 // afterFit: (scale: { paddingRight: number; paddingLeft: number }) => {
                 //     scale.paddingRight = 20;
                 //     scale.paddingLeft = 20;
-                // }
+                // },
                 // This is important for mobile
                 offset: true,
             },
@@ -627,6 +636,51 @@ const CandleChart = () => {
             border: `1px solid ${rugPulled ? SOLANA_COLORS.warning : SOLANA_COLORS.primary}`,
             boxShadow: `0 0 20px ${rugPulled ? 'rgba(255, 59, 59, 0.2)' : 'rgba(20, 241, 149, 0.2)'}`,
         }}>
+
+        <div style={{
+                    position: 'absolute',
+                    bottom: '10px',
+                    right: '10px',
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backdropFilter: 'blur(4px)',
+                    border: `1px solid ${SOLANA_COLORS.primary}`,
+                    fontFamily: "'Orbitron', sans-serif",
+                    zIndex: 10,
+                    fontSize: '12px', // Smaller base font size
+                    }}>
+                    <span style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: animationState.current.currentValue >= 1 ? SOLANA_COLORS.primary : SOLANA_COLORS.warning,
+                    }}>
+                        {((animationState.current.currentValue - 1) * 100).toFixed(2)}%
+                    </span>
+                    <span style={{
+                        fontSize: '12px',
+                        color: '#888',
+                    }}>
+                        SOL
+                    </span>
+            </div>
+
+            <div style={{
+                position: 'absolute',
+                top: '10px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: SOLANA_COLORS.text,
+                fontFamily: "'Orbitron', sans-serif",
+                }}>
+                {animationState.current.currentValue.toFixed(4)}x
+            </div>
+
             {/* Moon shot effect and message */}
             {showMoonShot && (
                 <>
@@ -746,6 +800,8 @@ const CandleChart = () => {
                 </div>
                 </>
             )}
+
+
         </div>
     );
 };
