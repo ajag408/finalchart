@@ -20,33 +20,6 @@ function App() {
       alignItems: 'center',
       gap: '2rem'
     }}>
-      <header style={{
-        width: '100%',
-        textAlign: 'center',
-        padding: '2rem 0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        
-        <h1 style={{ 
-          fontFamily: "'Orbitron', sans-serif",
-          fontSize: '3.5rem',
-          fontWeight: 'bold',
-          margin: 0,
-          background: `linear-gradient(45deg, ${SOLANA_COLORS.primary}, ${SOLANA_COLORS.secondary})`,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: `0 0 20px rgba(20, 241, 149, 0.3)`,
-          letterSpacing: '0.1em'
-        }}>
-          Rug Chart
-        </h1>
-
-        {/* <div className="header-right">
-          <SharePnlButton onClick={() => setIsShareModalOpen(true)} />
-        </div> */}
-      </header>
       
       <main style={{
         width: '100%',

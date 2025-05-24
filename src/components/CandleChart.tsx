@@ -69,7 +69,7 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
     
     // Timing and control refs
     const MAX_DURATION_MS = 60 * 1000;                                    // Maximum chart duration (30 seconds)
-    const rugPullTimeoutRef = useRef<number | null>(null);               // Stores rug pull timeout
+    const rugPullTimeoutRef = useRef<NodeJS.Timeout | null>(null);               // Stores rug pull timeout
     const startTimeRef = useRef<number>(0);                              // Chart start time
     const countdownRef = useRef<number>(3);                              // Countdown value reference
 
@@ -666,19 +666,6 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                     }}>
                         SOL
                     </span>
-            </div>
-
-            <div style={{
-                position: 'absolute',
-                top: '10px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: SOLANA_COLORS.text,
-                fontFamily: "'Orbitron', sans-serif",
-                }}>
-                {animationState.current.currentValue.toFixed(4)}x
             </div>
 
             {/* Moon shot effect and message */}
