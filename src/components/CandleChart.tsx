@@ -1,6 +1,7 @@
 // Import necessary dependencies from React and Chart.js libraries
 import { useEffect, useState, useRef } from 'react';
 import '../styles/components/CandleChart.css';
+import solanaLogo from '../assets/solana-logo.png';
 
 // Import required Chart.js components and plugins
 import {
@@ -20,6 +21,12 @@ interface CandleChartProps {
     onLevelChange?: (level: number) => void;
   }
 
+  interface TradeMarker {
+    size: number;      // Trade size
+    price: number;     // Price at which trade occurred
+    type: 'buy' | 'sell';  // Type of trade
+    timestamp: number;
+}
 // Register Chart.js components and plugins
 ChartJS.register(
     CategoryScale,
@@ -54,6 +61,7 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
     const [isShowingRugPullMessage, setIsShowingRugPullMessage] = useState(false);   // Controls rug pull message visibility
     const [shakingChart, setShakingChart] = useState(false);         // Controls chart shake animation
 
+    const [currentTrade, setCurrentTrade] = useState<TradeMarker | null>(null);
     // ==================== Refs (Persistent Values) ====================
     
     // Chart data refs
@@ -81,6 +89,49 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
         base: 1              // Base value for current candle
     });
 
+    const tradeMarkersRef = useRef<(TradeMarker | null)[]>(new Array(30).fill(null));
+
+    const chartRef = useRef<any>(null);
+
+        // Add function to simulate trade data
+
+        const simulateTradeMarker = () => {
+            const types: ('buy' | 'sell')[] = ['buy', 'sell'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const size = (Math.random() * 4.99) + 0.01; // Random size between 0.01 and 5
+            
+            const newTrade: TradeMarker = {
+                size: Number(size.toFixed(2)),
+                price: animationState.current.currentValue,
+                type: type,
+                timestamp: Date.now()
+            };
+            console.log('Creating new trade:', newTrade);
+            // Just store the current trade, don't add to array
+            setCurrentTrade(newTrade);
+            
+            // Force chart update
+            setData(createChartData([]));
+        };
+
+        const getTradePosition = () => {
+            if (!chartRef.current || !currentTrade) return { x: '50%', y: '50%' };
+            const chart = chartRef.current;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta.data[currentIndexRef.current]) return { x: '50%', y: '50%' };
+            
+            const yScale = chart.scales.y;
+            const currentBar = meta.data[currentIndexRef.current];
+            
+            // Use the bar's actual x position and add a fixed offset
+            const xPosition = currentBar.x + (currentBar.width / 2);
+            const yPixel = yScale.getPixelForValue(currentTrade.price);
+            
+            return {
+                x: `${(xPosition / chart.width) * 100}%`,
+                y: `${(yPixel / chart.height) * 100}%`
+            };
+        };
     // ==================== Chart Data Creation ====================
     
     /**
@@ -98,12 +149,34 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                 visibleCandles[index] = candle;
             }
         });
-
+    
         // Add current animating candle
         if (candles[currentIndexRef.current]) {
             visibleCandles[currentIndexRef.current] = candles[currentIndexRef.current];
         }
 
+        const tradeMarkerAnnotations: any = {};
+        tradeMarkersRef.current.forEach((trade, index) => {
+            if (trade) {
+                tradeMarkerAnnotations[`trade${index}`] = {
+                    type: 'line',
+                    yMin: trade.price - 0.05,  // Make the line longer
+                    yMax: trade.price + 0.05,
+                    xMin: index,
+                    xMax: index,
+                    borderColor: trade.type === 'buy' ? SOLANA_COLORS.primary : SOLANA_COLORS.warning,
+                    borderWidth: 2,
+                    borderDash: [],
+                    drawTime: 'afterDatasetsDraw',
+                    borderCapStyle: 'round',
+                    borderJoinStyle: 'round',
+                    shadowBlur: 10,
+                    shadowColor: trade.type === 'buy' ? 'rgba(20, 241, 149, 0.5)' : 'rgba(255, 59, 59, 0.5)'
+                };
+            }
+        });
+        console.log('Trade markers:', tradeMarkersRef.current);
+        console.log('Trade annotations:', tradeMarkerAnnotations);
         // Return formatted data structure for Chart.js
         return {
             labels: Array.from({ length: 30 }, (_, i) => i.toString()),
@@ -119,7 +192,6 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                         `rgba(255, 59, 59, ${rugPulled ? 0.5 : 0.8})`;
                 }),
                 
-                // Border styling
                 borderColor: visibleCandles.map((candle) => {
                     if (!candle) return 'transparent';
                     return candle.value >= candle.base ? 
@@ -129,7 +201,6 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                 borderWidth: 2,
                 borderRadius: 2,
                 
-                // Hover effects
                 hoverBackgroundColor: visibleCandles.map((candle) => {
                     if (!candle) return 'transparent';
                     return candle.value >= candle.base ? 
@@ -141,10 +212,44 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                 base: visibleCandles.map((candle) => candle?.base || null),
                 barPercentage: 0.8,
                 categoryPercentage: 0.8,
-                barThickness: 'flex',  // This helps maintain consistent width
-                maxBarThickness: 20,   // Maximum width of bars
-                minBarLength: 2,       // Minimum height of bars
-            }]
+                barThickness: 'flex',
+                maxBarThickness: 20,
+                minBarLength: 2,
+            }],
+            plugins: {
+                annotation: {
+                    annotations: {
+                        line1: {
+                            type: 'line',
+                            yMin: animationState.current.currentValue,
+                            yMax: animationState.current.currentValue,
+                            borderColor: rugPulled ? SOLANA_COLORS.warning : SOLANA_COLORS.primary,
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            label: {
+                                display: true,
+                                content: `${animationState.current.currentValue.toFixed(4)}x`,
+                                position: window.innerWidth < 768 ? 'start' : 'end', // Change position based on screen width
+                                backgroundColor: rugPulled ? 'rgba(255, 59, 59, 0.9)' : 'rgba(20, 241, 149, 0.9)',
+                                color: SOLANA_COLORS.dark,
+                                font: {
+                                    family: "'Orbitron', sans-serif",
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: {
+                                    top: 6,
+                                    bottom: 6,
+                                    left: 10,
+                                    right: 10
+                                },
+                                borderRadius: 4,
+                            }
+                        },
+                        ...tradeMarkerAnnotations,
+                    }
+                }
+            }
         };
     };
 
@@ -231,6 +336,9 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
         // Reset countdown
         countdownRef.current = 3;
         
+        tradeMarkersRef.current = new Array(30).fill(null);
+        setCurrentTrade(null);
+
         // Reset all states
         setIsShowingRugPullMessage(false);
         setIsGeneratingCandles(false);
@@ -401,6 +509,9 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
             if (animationFrameId.current) {
                 cancelAnimationFrame(animationFrameId.current);
             }
+            if (chartRef.current) {
+                chartRef.current.destroy();
+            }
         };
     }, []);
 
@@ -494,6 +605,16 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
             onPnlChange(0);
         }
     }, []); // Run once on mount
+
+    useEffect(() => {
+        if (isGeneratingCandles && !rugPulled) {
+            const tradeInterval = setInterval(() => {
+                simulateTradeMarker();
+            }, 1000); // Simulate trade every second
+
+            return () => clearInterval(tradeInterval);
+        }
+    }, [isGeneratingCandles, rugPulled]);
     // ==================== Chart Configuration ====================
     
     // Chart.js options configuration
@@ -574,6 +695,9 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                 enabled: false
             },
             annotation: {
+                common: {
+                    drawTime: 'afterDatasetsDraw'
+                },
                 annotations: {
                     line1: {
                         type: 'line',
@@ -623,7 +747,28 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                         backgroundColor: 'rgba(20, 241, 149, 0.02)',
                         borderWidth: 0,
                         drawTime: 'beforeDatasetsDraw',
-                    }
+                    },
+                    ...(currentTrade ? {
+                        // tradeLabel: {
+                        //     type: 'label',
+                        //     xValue: currentIndexRef.current,
+                        //     yValue: currentTrade.price,
+                        //     content: [`${currentTrade.type === 'buy' ? 'Buy' : 'Sell'} ${currentTrade.size.toFixed(3)}`],
+                        //     position: currentTrade.type === 'buy' ? 'top' : 'bottom',
+                        //     yAdjust: currentTrade.type === 'buy' ? -20 : 20,
+                        //     color: SOLANA_COLORS.dark,
+                        //     font: {
+                        //         family: "'Orbitron', sans-serif",
+                        //         size: 11,
+                        //         weight: 'bold'
+                        //     },
+                        //     backgroundColor: currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.9)' : 'rgba(255, 59, 59, 0.9)',
+                        //     padding: 8,
+                        //     borderRadius: 4,
+                        //     shadowBlur: 10,
+                        //     shadowColor: currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.5)' : 'rgba(255, 59, 59, 0.5)'
+                        // }
+                    } : {})
                 }
             }
         }
@@ -728,6 +873,70 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                     </div>
                 </>
             )}
+
+            {currentTrade && (
+                <div style={{
+                    position: 'absolute',
+                    top: getTradePosition().y,
+                    left: getTradePosition().x,
+                    transform: 'translate(0, -50%)',
+                    marginLeft: '-17px',
+                    zIndex: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: `1px solid ${currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.3)' : 'rgba(255, 59, 59, 0.3)'}`,
+                    boxShadow: `0 0 10px ${currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.1)' : 'rgba(255, 59, 59, 0.1)'}`,
+                }}>
+                    <img 
+                        src={solanaLogo} 
+                        alt="Solana"
+                        style={{
+                            width: '20px',
+                            height: '20px',
+                            filter: currentTrade.type === 'buy' ? 
+                                'drop-shadow(0 0 5px rgba(20, 241, 149, 0.7))' : 
+                                'drop-shadow(0 0 5px rgba(255, 59, 59, 0.7))'
+                        }}
+                    />
+                    <span style={{
+                        color: currentTrade.type === 'buy' ? SOLANA_COLORS.primary : SOLANA_COLORS.warning,
+                        fontFamily: "'Orbitron', sans-serif",
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        textShadow: `0 0 10px ${currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.7)' : 'rgba(255, 59, 59, 0.7)'}`,
+                    }}>
+                        {`${currentTrade.type === 'buy' ? 'Buy' : 'Sell'} ${currentTrade.size.toFixed(3)}`}
+                    </span>
+                </div>
+            )}
+
+            {/* Trade notification */}
+            {/* {currentTrade && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '10px',
+                        background: currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.2)' : 'rgba(255, 59, 59, 0.2)',
+                        border: `1px solid ${currentTrade.type === 'buy' ? SOLANA_COLORS.primary : SOLANA_COLORS.warning}`,
+                        borderRadius: '4px',
+                        padding: '8px',
+                        color: SOLANA_COLORS.text,
+                        fontSize: '12px',
+                        fontFamily: "'Orbitron', sans-serif",
+                        backdropFilter: 'blur(4px)',
+                        animation: 'fadeInOut 1s forwards',
+                        zIndex: 100
+                    }}
+                >
+                    {currentTrade.type.toUpperCase()} {currentTrade.size.toLocaleString()} GLOSS @ {currentTrade.price.toFixed(3)}x
+                </div>
+            )} */}
+
+
                 {/* Chart wrapper */}
     <div style={{ 
         position: 'relative',  // Changed to relative
@@ -735,7 +944,7 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
         width: '100%',        // Added width
     }}>
             {/* Render Chart */}
-            {data && <Bar data={data} options={options as any} style={{
+            {data && <Bar ref={chartRef} data={data} options={options as any} style={{
                             filter: rugPulled ? 'contrast(1.2) brightness(0.8)' : 'none',
                 transition: 'all 0.3s ease',
             }} />}
