@@ -75,9 +75,9 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
 
     // Animation state management
     const animationState = useRef({
-        startValue: 0,        // Starting value of current candle
-        targetValue: 0,       // Target value for current candle
-        currentValue: 0,      // Current animated value
+        startValue: 1,        // Starting value of current candle
+        targetValue: 1,       // Target value for current candle
+        currentValue: 1,      // Current animated value
         base: 1              // Base value for current candle
     });
 
@@ -218,9 +218,9 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
         
         // Reset animation state
         animationState.current = {
-            startValue: 0,
-            targetValue: 0,
-            currentValue: 0,
+            startValue: 1,
+            targetValue: 1,
+            currentValue: 1,
             base: 1
         };
         
@@ -354,9 +354,13 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                 base: base
             };
             
-            // Update PNL and level
-            if (onPnlChange) onPnlChange((currentValue - 1) * 100);
-            if (onLevelChange) onLevelChange(Math.floor(currentValue));
+            // Update PNL and level only if countdown is finished
+            if (countdown === 0 && onPnlChange) {
+                onPnlChange((animationState.current.currentValue - 1) * 100);
+            }
+            if (countdown === 0 && onLevelChange) {
+                onLevelChange(Math.floor(animationState.current.currentValue));
+            }
 
             // Update chart
             setData(createChartData(newCandleData));
@@ -484,7 +488,12 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
         }
     }, [isShowingRugPullMessage]);
 
-
+    useEffect(() => {
+        // Set initial PNL to 0
+        if (onPnlChange) {
+            onPnlChange(0);
+        }
+    }, []); // Run once on mount
     // ==================== Chart Configuration ====================
     
     // Chart.js options configuration
