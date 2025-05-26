@@ -1,12 +1,7 @@
-import { useState } from 'react';
 import CandleChart from './components/CandleChart';
 import { SOLANA_COLORS } from './components/CandleChart';
 
 function App() {
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [currentPnl, setCurrentPnl] = useState(0);
-  const [currentLevel, setCurrentLevel] = useState(1);
-
   return (
     <div style={{ 
       width: '100%', 
@@ -30,10 +25,7 @@ function App() {
         border: `1px solid rgba(${SOLANA_COLORS.primary}, 0.1)`,
         backdropFilter: 'blur(8px)'
       }}>
-        <CandleChart 
-          onPnlChange={setCurrentPnl}
-          onLevelChange={setCurrentLevel}
-        />
+        <CandleChart />
       </main>
     </div>
   );

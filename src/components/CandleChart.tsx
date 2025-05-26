@@ -17,8 +17,8 @@ import { Bar } from 'react-chartjs-2';
 import annotationPlugin from 'chartjs-plugin-annotation';
 
 interface CandleChartProps {
-    onPnlChange?: (pnl: number) => void;
-    onLevelChange?: (level: number) => void;
+    // onPnlChange?: (pnl: number) => void;
+    // onLevelChange?: (level: number) => void;
   }
 
   interface TradeMarker {
@@ -46,7 +46,7 @@ export const SOLANA_COLORS = {
     warning: '#FF3B3B'    // Rug pull red
 };
 
-const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange }) => {
+const CandleChart: React.FC<CandleChartProps> = () => {
     // ==================== State Management ====================
     
     // Core chart states
@@ -77,7 +77,7 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
     
     // Timing and control refs
     const MAX_DURATION_MS = 60 * 1000;                                    // Maximum chart duration (30 seconds)
-    const rugPullTimeoutRef = useRef<NodeJS.Timeout | null>(null);               // Stores rug pull timeout
+    const rugPullTimeoutRef = useRef<number | null>(null);               // Stores rug pull timeout
     const startTimeRef = useRef<number>(0);                              // Chart start time
     const countdownRef = useRef<number>(3);                              // Countdown value reference
 
@@ -463,12 +463,12 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
             };
             
             // Update PNL and level only if countdown is finished
-            if (countdown === 0 && onPnlChange) {
-                onPnlChange((animationState.current.currentValue - 1) * 100);
-            }
-            if (countdown === 0 && onLevelChange) {
-                onLevelChange(Math.floor(animationState.current.currentValue));
-            }
+            // if (countdown === 0 && onPnlChange) {
+            //     onPnlChange((animationState.current.currentValue - 1) * 100);
+            // }
+            // if (countdown === 0 && onLevelChange) {
+            //     onLevelChange(Math.floor(animationState.current.currentValue));
+            // }
 
             // Update chart
             setData(createChartData(newCandleData));
@@ -570,7 +570,7 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
 
             // Set random rug pull timing
             const rugPullDelay = Math.random() * MAX_DURATION_MS;
-            rugPullTimeoutRef.current = setTimeout(executeRugPull, rugPullDelay);
+            rugPullTimeoutRef.current = setTimeout(executeRugPull, rugPullDelay) as unknown as number;;
 
             // Set maximum duration timeout
             const maxDurationTimeout = setTimeout(() => {
@@ -600,10 +600,10 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
     }, [isShowingRugPullMessage]);
 
     useEffect(() => {
-        // Set initial PNL to 0
-        if (onPnlChange) {
-            onPnlChange(0);
-        }
+        // // Set initial PNL to 0
+        // if (onPnlChange) {
+        //     onPnlChange(0);
+        // }
     }, []); // Run once on mount
 
     useEffect(() => {
@@ -670,14 +670,6 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                 grid: {
                     display: false
                 },
-                // // This is important for mobile
-                // offset: true,
-                // // These ensure consistent bar width
-                // afterFit: (scale: { paddingRight: number; paddingLeft: number }) => {
-                //     scale.paddingRight = 20;
-                //     scale.paddingLeft = 20;
-                // },
-                // This is important for mobile
                 offset: true,
             },
         },
@@ -749,25 +741,6 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                         drawTime: 'beforeDatasetsDraw',
                     },
                     ...(currentTrade ? {
-                        // tradeLabel: {
-                        //     type: 'label',
-                        //     xValue: currentIndexRef.current,
-                        //     yValue: currentTrade.price,
-                        //     content: [`${currentTrade.type === 'buy' ? 'Buy' : 'Sell'} ${currentTrade.size.toFixed(3)}`],
-                        //     position: currentTrade.type === 'buy' ? 'top' : 'bottom',
-                        //     yAdjust: currentTrade.type === 'buy' ? -20 : 20,
-                        //     color: SOLANA_COLORS.dark,
-                        //     font: {
-                        //         family: "'Orbitron', sans-serif",
-                        //         size: 11,
-                        //         weight: 'bold'
-                        //     },
-                        //     backgroundColor: currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.9)' : 'rgba(255, 59, 59, 0.9)',
-                        //     padding: 8,
-                        //     borderRadius: 4,
-                        //     shadowBlur: 10,
-                        //     shadowColor: currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.5)' : 'rgba(255, 59, 59, 0.5)'
-                        // }
                     } : {})
                 }
             }
@@ -913,42 +886,19 @@ const CandleChart: React.FC<CandleChartProps> = ({ onPnlChange, onLevelChange })
                 </div>
             )}
 
-            {/* Trade notification */}
-            {/* {currentTrade && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        background: currentTrade.type === 'buy' ? 'rgba(20, 241, 149, 0.2)' : 'rgba(255, 59, 59, 0.2)',
-                        border: `1px solid ${currentTrade.type === 'buy' ? SOLANA_COLORS.primary : SOLANA_COLORS.warning}`,
-                        borderRadius: '4px',
-                        padding: '8px',
-                        color: SOLANA_COLORS.text,
-                        fontSize: '12px',
-                        fontFamily: "'Orbitron', sans-serif",
-                        backdropFilter: 'blur(4px)',
-                        animation: 'fadeInOut 1s forwards',
-                        zIndex: 100
-                    }}
-                >
-                    {currentTrade.type.toUpperCase()} {currentTrade.size.toLocaleString()} GLOSS @ {currentTrade.price.toFixed(3)}x
-                </div>
-            )} */}
 
-
-                {/* Chart wrapper */}
-    <div style={{ 
-        position: 'relative',  // Changed to relative
-        height: '100%',       // Added height
-        width: '100%',        // Added width
-    }}>
-            {/* Render Chart */}
-            {data && <Bar ref={chartRef} data={data} options={options as any} style={{
-                            filter: rugPulled ? 'contrast(1.2) brightness(0.8)' : 'none',
-                transition: 'all 0.3s ease',
-            }} />}
-    </div>
+            {/* Chart wrapper */}
+            <div style={{ 
+                position: 'relative',  // Changed to relative
+                height: '100%',       // Added height
+                width: '100%',        // Added width
+            }}>
+                    {/* Render Chart */}
+                    {data && <Bar ref={chartRef} data={data} options={options as any} style={{
+                                    filter: rugPulled ? 'contrast(1.2) brightness(0.8)' : 'none',
+                        transition: 'all 0.3s ease',
+                    }} />}
+            </div>
             
             {/* Render Countdown */}
             {countdownRef.current > 0 && (

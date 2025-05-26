@@ -1,4 +1,4 @@
-# Enhanced Rug Chart - 2x Better Implementation
+# Enhanced Rug Chart (2x+ Better Implementation)
 
 ## 🔗 Live Demo
 
@@ -6,7 +6,7 @@
 
 ## 📊 Implementation Comparison: Source vs Enhanced
 
-### Source Implementation (Basic)
+### Source Implementation
 
 - Static canvas-based chart with basic candle rendering
 - Simple price updates without smooth transitions
