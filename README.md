@@ -2,7 +2,7 @@
 
 ## 🔗 Live Demo
 
-[View Live Demo]()
+[View Live Demo](https://finalchart.vercel.app/)
 
 ## 📊 Implementation Comparison: Source vs Enhanced
 
