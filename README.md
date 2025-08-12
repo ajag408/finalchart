@@ -1,4 +1,4 @@
-# Enhanced Rug Chart (2x+ Better Implementation)
+# Enhanced Rug Chart (Better Implementation)
 
 ## 🔗 Live Demo
 
